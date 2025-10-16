@@ -141,13 +141,29 @@ def potential(r):
 #  l=5;pot=40000/r**12-2000/r**6+l*(l+1)/(2.*mass*r*r) #_modified Coulomb potential
 #  pot=(r-5.)**2/2                     # harmonic oscillator potential
 #  pot=0.                             # square-well potential
-  pot=9*((1-np.exp(-1*(r-5.)))**2-1.) +300./(2.*r*r) # Morse
-  l_absorb=60.;strength_absorb=1.;A5=0.7
-  if( resonances==1 ):
-    pot=pot+1j*0.
-    if(r>x_sectors[n_inter]-l_absorb) :
+  # pot=9*((1-np.exp(-1*(r-5.)))**2-1.) +300./(2.*r*r) # Morse
+  R = 7.5 * 1.8897e-5
+  Z = 84
+  V0 = 62
+  sigma = 1
+
+  V_WS   = V0/(1+ np.exp((r-R)/sigma))
+  # V_Wall = V1*exp(-r_fm/delta)
+  if (r <= R):
+     V_C = 2*(Z-2)*(3*R**2-r**2)/(2*R**3)
+  else:
+    V_C = 2*(Z-2)/r
+
+  pot  = V_WS + V_C
+
+  l_absorb=60.;strength_absorb=1.;A5=0.7 
+  if( resonances == 1 ):
+    pot = pot + 1j*0.
+    if(r > x_sectors[n_inter]-l_absorb) :
 #      pot=pot-1j*strength_absorb*(r-(x_end-l_absorb))**2
       pot=pot-1j*A5*13.*np.exp(-2.*l_absorb/(r-(x_sectors[n_inter]-l_absorb) ))
+
+  
   return pot
 
 # ****************************************
@@ -158,6 +174,7 @@ def plotting_pot():
   npoints_for_plot=1000
   x_new = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
   y_fit = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
+  
   for i in range(npoints_for_plot):
     y_fit[i] = potential(x_new[i]).real
 
@@ -283,9 +300,9 @@ def sort_E_Bspl(NomE,DenomE,vr,N):
       if ( energies[i] > energies[k] ):
         tmp =energies[i]; energies[i]=energies[k];energies[k]=tmp
         tmp =widths[i];   widths[i]  =widths[k];  widths[k]  =tmp
-        tmpv=vr[:,i];     vr[:,i]    =vr[:,k];    vr[:,k]=tmpv;
+        tmpv=vr[:,i];     vr[:,i]    =vr[:,k];    vr[:,k]=tmpv
   eigenvectors=vr  
-  return energies,widths,eigenvectors
+  return energies, widths, eigenvectors
    
 # ****************************************
 def maxloc(a,N):
@@ -312,16 +329,16 @@ x_weigths=np.zeros([n_inter,LegPoints],dtype =float)
 x_sectors=np.zeros(n_inter+1)
 x_grid,x_weigths,x_sectors=grid_for_1D_Bsplines(n_inter,LegPoints,x_begin,x_end)
 
-t_knots=np.linspace(0., 0., n_inter+2*order+1) ;
+t_knots=np.linspace(0., 0., n_inter+2*order+1)
 t_knots[0:order] = x_begin; t_knots[n_inter+order+1:n_inter+2*order+1] =x_sectors[n_inter];
 
 for i in range(n_inter+1):
   t_knots[order+i]=x_sectors[i]
 #print (t_knots)
 
-basis_dim=0
-boundary_left=1;boundary_right=1
-basis_dim,bf= constructing_basis(boundary_left,boundary_right)
+basis_dim = 0
+boundary_left = 1; boundary_right = 1
+basis_dim,bf =  constructing_basis(boundary_left,boundary_right)
 #print ('checking basis',bf[5].f_on_grid)
 
 fo =  open("basis2.dat", "w")
