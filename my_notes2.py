@@ -144,7 +144,7 @@ def potential(r):
   # pot=9*((1-np.exp(-1*(r-5.)))**2-1.) +300./(2.*r*r) # Morse
   R = 7.5 * 1.8897e-5
   Z = 84
-  V0 = 62
+  V0 = 62 * 36749.7
   sigma = 1
 
   V_WS   = V0/(1+ np.exp((r-R)/sigma))
@@ -182,7 +182,7 @@ def plotting_pot():
   plt.legend(loc='best', fancybox=True, shadow=True)
   plt.grid()
 #  plt.ylim(-0.4, 0.1)# modified Coulomb potential
-  plt.ylim(-6, 2)
+  # plt.ylim(-6, 2)
   plt.xscale('log', base=10)
   plt.show()
 
