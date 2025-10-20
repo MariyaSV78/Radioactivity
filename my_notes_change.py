@@ -137,81 +137,99 @@ def integral_u_upp(bf1,bf2) :
   return overlap,low_limit,upper_limit
 # ****************************************
 def potential(r):
-  # l=1;pot=-1/r+l*(l+1)/(2.*mass*r*r) #_modified Coulomb potential
-  # l=5;pot=40000/r**12-2000/r**6+l*(l+1)/(2.*mass*r*r) #_modified Coulomb potential
+#  l=1;pot=-1/r+l*(l+1)/(2.*mass*r*r) #_modified Coulomb potential
+#  l=5;pot=40000/r**12-2000/r**6+l*(l+1)/(2.*mass*r*r) #_modified Coulomb potential
 #  pot=(r-5.)**2/2                     # harmonic oscillator potential
 #  pot=0.                             # square-well potential
-  # pot=9*((1-np.exp(-1*(r-5.)))**2-1.) +300./(2.*r*r) # Morse
+  
+  # pot=9*((1-np.exp(-1*(r-5.)))**2-1.) + 300./(2.*r*r) # Morse
+  # l_absorb = 60
+  # A5 = 0.7
+
+
+
+
   R = 7.5 * 1.8897e-5
   Z = 84
   V0 = 62 * 36749.7
-  a =  0.69 * 1.8897e-5
-  # print(f"  Z_parent = {Z}, V0_hartree = {V0:.2e} Ha, R0_bohr = {R:.2e} Bohr, a_bohr = {a:.2e} Bohr, r = {r}")
-  
-  V_WS   = - V0/(1 + np.exp((r - R)/a))
-  # V_Wall = V1*exp(-r_fm/delta)
-  if (r <= R):
-    V_C = 2*(Z-2)*(3*R**2 - r**2)/(2*R**3) 
-  else:
-    V_C = 2*(Z-2)/r
+  sigma = 0.68 * 1.8897e-5
 
-  # if (r > R):
-  #   pot = 2*(Z-2)/r 
-  # else:
-  #   pot   = - V0/(1 + np.exp((r - R)/a))
+  l_absorb = 60 * 1.8897e-5
+  # strength_absorb = 1
+  A5 = 0.7 * 36749.7
+
+  V_WS   = - V0/(1+ np.exp((r-R)/sigma))
+  # V_Wall = V1*exp(-r_fm/delta)
+
+  V_C = np.zeros_like(r)
+  cond = r <= R
+  V_C[cond] = 2*(Z-2)*(3*R**2-r[cond]**2)/(2*R**3)
+  V_C[~cond] = 2*(Z-2)/r[~cond]
 
   pot  = V_WS + V_C
 
-  l_absorb=60.;strength_absorb=1.;A5=0.7 
+
+
+
   if( resonances == 1 ):
-    pot = pot + 1j*0.
-    if(r > x_sectors[n_inter]-l_absorb) :
+    pot = pot.astype(np.complex128)
+    r0 = x_sectors[n_inter] - l_absorb
+    # print(f"r0 = {r0}")
+
+    cond = r > r0
 #      pot=pot-1j*strength_absorb*(r-(x_end-l_absorb))**2
-      pot=pot-1j*A5*13.*np.exp(-2.*l_absorb/(r-(x_sectors[n_inter]-l_absorb) ))
+    # pot[cond] -= 1j * A5 * 13. * np.exp( -2 * l_absorb/( r[cond] - r0 ) )
+    pot[cond] -= 1j * A5 * 13. * np.exp( -2 * l_absorb/( r[cond] - r0 ) )
 
   
   return pot
 
 # ****************************************
-def plotting_pot():
+def plotting_pot(E=None):
   plt.title("potential")
 
 #  c0[0:n_inter+2*order] =0.; c[i]=1.1
   npoints_for_plot=1000
-  x_new = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
-  y_fit = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
+  # x_new = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
+  x_new = t_knots
   
-  for i in range(npoints_for_plot):
-    y_fit[i] = potential(x_new[i]).real
-  plt.plot(x_new, y_fit, '-r', label="potential")
-  plt.axhline(y=1.95e+05, color='b', linestyle='--', label='E = 2')
+  V = potential(x_new)
 
-  plt.legend(loc='best', fancybox=True, shadow=True)
+  plt.plot(x_new, V.real, '-r', label="potential")
+  if resonances:
+    plt.plot(x_new, V.imag, '-b', label="imaginary part of potential")
   plt.grid()
+  plt.legend(loc='best', fancybox=True, shadow=True)
 #  plt.ylim(-0.4, 0.1)# modified Coulomb potential
-  plt.xlim(0, 0.00165)
+
+  # plt.ylim(-6, 6)
+
   # plt.xscale('log', base=10)
+
+  if E is not None:
+    plt.hlines(E, xmin=min(t_knots), xmax=max(t_knots), colors='g', linestyles='solid')
+
+  plt.ylabel("energies")
+  plt.xlabel("coordinate")
+
   plt.show()
 
 # ****************************************
 def construct_hamiltonian(hamiltonian,overlap_mat):
-  f1=np.ones([n_inter,LegPoints],dtype =float)
+  f1 = np.ones([n_inter,LegPoints],dtype =float)
   #potential function
-  if(resonances == 0):
-    print("potential energy operator")
-    v_pot=np.zeros([n_inter,LegPoints],dtype =float)
-  else:
-    v_pot=np.zeros([n_inter,LegPoints],dtype =complex)
-  for i in range(n_inter):
-    for l in range(LegPoints):
-#      v_pot[i,l]=(x_grid[i,l]-5)*(x_grid[i,l]-5)/2.
-      v_pot[i,l]=potential(x_grid[i,l])
-  print("hamilton energy %d ", basis_dim)
-  
+  v_pot = potential(x_grid)
+#   if(resonances == 0):
+#     v_pot = np.zeros([n_inter,LegPoints],dtype =float)
+#   else:
+#     v_pot=np.zeros([n_inter,LegPoints],dtype =complex)
+#   for i in range(n_inter):
+#     for l in range(LegPoints):
+# #      v_pot[i,l]=(x_grid[i,l]-5)*(x_grid[i,l]-5)/2.
+#       v_pot[i,l]=potential(x_grid[i,l])
+     
   for i in range(basis_dim):
-
     for j in range(basis_dim):
-
        hamiltonian[i,j]=integral_u_upp(bf[i],bf[j])[0]/(-2.*mass)+integral_u_u(bf[i],bf[j],v_pot)[0]
        overlap_mat[i,j]=integral_u_u(bf[i],bf[j],f1)[0]
   return 
@@ -279,8 +297,6 @@ def plotting_wf_c(eigen_vec,iv) :
   spl = BSpline(t_knots, c0, order)
   x_new = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
   y_fit = BSpline(t_knots, c0, order)(x_new)
-
-  print("plotting_wf_c", x_new, y_fit)
   # plt.xscale('log', base=10)
   plt.plot(x_new, y_fit, '-r', label="v="+ " {}".format(iv)+" E="+ " {}".format(energies[iv]))
     
@@ -330,11 +346,12 @@ def maxloc(a,N):
 # Main code
 # ****************************************
 
-mass=1.
-n_inter=200
-# x_begin=.5 * 1.8897e-5; x_end=200.* 1.8897e-5
-# x_begin = 9.4485e-06, x_end = 0.004251825
-x_begin=9.4485e-06; x_end=0.004251825
+mass = 7294.0 
+# n_inter=200
+n_inter=600
+x_begin=.5 *  1.8897e-5; x_end=200 *  1.8897e-5
+# x_begin=.5; x_end=100 
+# x_begin=.5; x_end=300 
 
 resonances=1
 
@@ -346,7 +363,8 @@ x_sectors=np.zeros(n_inter+1)
 x_grid,x_weigths,x_sectors=grid_for_1D_Bsplines(n_inter,LegPoints,x_begin,x_end)
 
 t_knots=np.linspace(0., 0., n_inter+2*order+1)
-t_knots[0:order] = x_begin; t_knots[n_inter+order+1:n_inter+2*order+1] =x_sectors[n_inter]
+t_knots[0:order] = x_begin
+t_knots[n_inter+order+1:n_inter+2*order+1] = x_sectors[n_inter]
 
 for i in range(n_inter+1):
   t_knots[order+i]=x_sectors[i]
@@ -416,19 +434,31 @@ else :
   if(info == 0):
     energies,widths,eigenvectors=sort_E_Bspl(NomE,DenomE,vr,basis_dim)
 
+    n_E_show = 100
+    n_E_show = energies.size
+    n_E_show = 500
+
     print('energies and lifetimes are')
-    for i in range(100):
-      print(i,energies[i],1./widths[i])
+    for i in range(n_E_show):
+      print(i,energies[i]/36749.7, 1./widths[i])
+      print(i,energies[i]/36749.7, widths[i])
 
-    for iv in range(100):
-      if(widths[iv] < 1.e-3):plotting_wf_c(eigenvectors,iv)
+    for iv in range(n_E_show):
+      if(widths[iv] < 1e-3):plotting_wf_c(eigenvectors,iv)
 
-    # plt.yscale('log', base=10)
-    plt.scatter(energies, 1/widths, marker='+')
+    print(f"N energies = {energies.shape}")
+    plt.scatter(1/widths[:n_E_show], energies[:n_E_show], marker='+')
+    plt.xscale('log', base=10)
     plt.grid()
     # plt.ylim(1.e-7, 1)
     # plt.xlim(-0.25, 1)
+    plt.ylabel("energies")
+    plt.xlabel("1/widths")
     plt.show()
+
+
+    plotting_pot(energies[:n_E_show])
+
   else:
     print('info=',info)
 
