@@ -149,16 +149,17 @@ def potential(r):
 
 
 
-  R = 7.5 * 1.8897e-5
+  R = 7.42 * 1.8897e-5
   Z = 84
   V0 = 62 * 36749.7
   sigma = 0.68 * 1.8897e-5
 
-  l_absorb = 60 * 1.8897e-5
+  l_absorb = 100 * 1.8897e-5
   # strength_absorb = 1
   A5 = 0.7 * 36749.7
 
   V_WS   = - V0/(1+ np.exp((r-R)/sigma))
+  # print("r=",r, "R=", R, "(r-R)/sigma", (r-R)/sigma)
   # V_Wall = V1*exp(-r_fm/delta)
 
   V_C = np.zeros_like(r)
@@ -195,9 +196,9 @@ def plotting_pot(E=None):
   
   V = potential(x_new)
 
-  plt.plot(x_new, V.real, '-r', label="potential")
+  plt.plot(x_new, V.real/36749.7, '-r', label="potential")
   if resonances:
-    plt.plot(x_new, V.imag, '-b', label="imaginary part of potential")
+    plt.plot(x_new, V.imag/36749.7, '-b', label="imaginary part of potential")
   plt.grid()
   plt.legend(loc='best', fancybox=True, shadow=True)
 #  plt.ylim(-0.4, 0.1)# modified Coulomb potential
@@ -348,8 +349,9 @@ def maxloc(a,N):
 
 mass = 7294.0 
 # n_inter=200
-n_inter=600
-x_begin=.5 *  1.8897e-5; x_end=200 *  1.8897e-5
+
+n_inter=500
+x_begin=.05 *  1.8897e-5; x_end=400 *  1.8897e-5
 # x_begin=.5; x_end=100 
 # x_begin=.5; x_end=300 
 
@@ -434,30 +436,32 @@ else :
   if(info == 0):
     energies,widths,eigenvectors=sort_E_Bspl(NomE,DenomE,vr,basis_dim)
 
-    n_E_show = 100
-    n_E_show = energies.size
-    n_E_show = 500
+    n_E_show = 200
+    0
+    # n_E_show = energies.size
+
 
     print('energies and lifetimes are')
     for i in range(n_E_show):
-      print(i,energies[i]/36749.7, 1./widths[i])
-      print(i,energies[i]/36749.7, widths[i])
+      print(i,energies[i]/36749.7, (1./widths[i])*2.418884e-17)
 
-    for iv in range(n_E_show):
-      if(widths[iv] < 1e-3):plotting_wf_c(eigenvectors,iv)
+    for iv in range(40,41):
+
+      # if(widths[iv] < 1e-3):
+      plotting_wf_c(eigenvectors,iv)
 
     print(f"N energies = {energies.shape}")
-    plt.scatter(1/widths[:n_E_show], energies[:n_E_show], marker='+')
+    plt.scatter(1/widths[:n_E_show] *2.418884e-17 , energies[:n_E_show]/36749.7, marker='+')
     plt.xscale('log', base=10)
     plt.grid()
     # plt.ylim(1.e-7, 1)
     # plt.xlim(-0.25, 1)
-    plt.ylabel("energies")
-    plt.xlabel("1/widths")
+    plt.ylabel("energies, MeV")
+    plt.xlabel("1/widths, s")
     plt.show()
 
 
-    plotting_pot(energies[:n_E_show])
+    plotting_pot(energies[:n_E_show]/36749.7)
 
   else:
     print('info=',info)
