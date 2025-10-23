@@ -168,7 +168,8 @@ def potential(r):
   V_C[~cond] = 2*(Z-2)/r[~cond]
 
   pot  = V_WS + V_C
-
+  # pot[-1] = 1e10
+  # pot[0] = 1e10
 
 
 
@@ -290,7 +291,7 @@ def plotting_wf_c(eigen_vec,iv) :
     c1[nbasis_dim-1]=c1[basis_dim-2] # needs to be checked
 
 
-  plt.title("wave function, v="+ " {}".format(iv))
+  # plt.title("wave function, v="+ " {}".format(iv))
 
 #  c0[0:n_inter+2*order] =0.; c[i]=1.
   npoints_for_plot=1000
@@ -299,14 +300,27 @@ def plotting_wf_c(eigen_vec,iv) :
   x_new = np.linspace(min(t_knots), max(t_knots), npoints_for_plot)
   y_fit = BSpline(t_knots, c0, order)(x_new)
   # plt.xscale('log', base=10)
-  plt.plot(x_new, y_fit, '-r', label="v="+ " {}".format(iv)+" E="+ " {}".format(energies[iv]))
-    
+  # plt.plot(x_new, y_fit, '-r', label="v="+ " {}".format(iv)+" E="+ " {}".format(energies[iv]))
+
 # imaginary part of the wave function
   spl = BSpline(t_knots, c1, order)
-  y_fit = BSpline(t_knots, c1, order)(x_new)
-  plt.legend(loc='best', fancybox=True, shadow=True)
-  plt.plot(x_new, y_fit, '-b', label="imag")
-  plt.grid()
+  y_fit2 = BSpline(t_knots, c1, order)(x_new)
+
+  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))  # 1 row, 2 columns
+  ax1.set_title("wave function, v="+ " {}".format(iv))
+  ax1.plot(x_new, y_fit, '-r', label="v="+ " {}".format(iv)+" E="+ " {}".format(energies[iv]))
+    
+  # FFT
+  Yk = np.fft.fftshift(np.fft.fft(y_fit + 1j*y_fit2))
+  k = np.fft.fftshift(np.fft.fftfreq(x_new.shape[-1], d=np.diff(x_new)[-1])) * 2*np.pi
+  ax2.plot(k, Yk.real, 'r')
+  ax2.plot(k, Yk.imag, 'b')
+
+  ax1.legend(loc='best', fancybox=True, shadow=True)
+  ax1.plot(x_new, y_fit2, '-b', label="imag")
+  # plt.grid()
+  ax1.grid()
+  ax2.grid()
   plt.show() 
 # ****************************************
 
@@ -355,7 +369,8 @@ x_begin=.05 *  1.8897e-5; x_end=400 *  1.8897e-5
 # x_begin=.5; x_end=100 
 # x_begin=.5; x_end=300 
 
-resonances=1
+# resonances = 0
+resonances = 1
 
 order=5
 LegPoints=8
@@ -445,7 +460,7 @@ else :
     for i in range(n_E_show):
       print(i,energies[i]/36749.7, (1./widths[i])*2.418884e-17)
 
-    for iv in range(40,41):
+    for iv in range(0,41):
 
       # if(widths[iv] < 1e-3):
       plotting_wf_c(eigenvectors,iv)
