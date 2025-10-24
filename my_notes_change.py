@@ -308,7 +308,7 @@ def plotting_wf_c(eigen_vec,iv) :
 
   fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))  # 1 row, 2 columns
   ax1.set_title("wave function, v="+ " {}".format(iv))
-  ax1.plot(x_new, y_fit, '-r', label="v="+ " {}".format(iv)+" E="+ " {}".format(energies[iv]))
+  ax1.plot(x_new, y_fit, '-r', label="v="+ " {}".format(iv)+" E="+ " {}".format(energies[iv]/36749.7))
     
   # FFT
   Yk = np.fft.fftshift(np.fft.fft(y_fit + 1j*y_fit2))
